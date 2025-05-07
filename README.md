@@ -1,17 +1,33 @@
-Library Management System
+# 📚 Library Management System
 
-A Library Management System built using Python and SQLite that allows users to manage books efficiently. This system provides functionalities to add, view, search, update, delete, borrow, and return books using a simple command-line interface (CLI).
+A simple web-based Library Management System built using **Python** and **Streamlit**.
 
+This app allows users to manage books, track borrow/return activities, and keep records — all through a clean, interactive interface.
 
 ---
 
-🚀 Features
+## 🚀 Features
 
-✔ Add Books – Insert new books into the database.
-✔ View Books – Display all books stored in the library.
-✔ Search Books – Find books by title or author.
-✔ Update Book Details – Modify existing book information.
-✔ Delete Books – Remove books from the database.
-✔ Borrow Books – Change book status from "Available" to "Borrowed".
-✔ Return Books – Change book status back to "Available".
-✔ Uses SQLite – Data is stored permanently.
+- 📖 Add, update, and delete books
+- 🔍 Search and view book details
+- 👥 Track users and book issues
+- 🧾 Maintain borrow/return logs
+- 💻 Built with Streamlit for a responsive UI
+
+---
+
+## 🛠️ Technologies Used
+
+- Python
+- Streamlit
+- Pandas / CSV (for data handling)
+- Git & GitHub (for version control)
+
+---
+
+## ▶️ Run Locally
+
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/SyedaAnabia/libary-management.git
+   cd libary-management
