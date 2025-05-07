@@ -1,0 +1,19 @@
+
+[
+    {
+        "id": 1,
+        "title": "Book Title",
+        "author": "Author Name",
+        "year": 2024,
+        "genre": "Fiction",
+        "read": true
+    },
+    {
+        "id": 2,
+        "title": "Book",
+        "author": "Author ",
+        "year": 2024,
+        "genre": "Fiction",
+        "read": true
+    }
+]
