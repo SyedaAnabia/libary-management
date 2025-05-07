@@ -1,124 +1,98 @@
-import sqlite3
+import argparse
+import json
+import os
 
-# SQLite database se connect karega (Agar file nahi hai to naye database banayega)
-conn = sqlite3.connect("library.db")
-cursor = conn.cursor()
+FILE_NAME = "library.json"
+books = []
 
-# Books table create kar raha hai agar pehle se nahi bani
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS books (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        author TEXT NOT NULL,
-        genre TEXT,
-        year INTEGER,
-        status TEXT DEFAULT 'Available'
-    )
-''')
-conn.commit()
+def load_books():
+    global books
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "r") as file:
+            books = json.load(file)
 
-# Function: Nayi book add karna
-def add_book(title, author, genre, year):
-    cursor.execute("INSERT INTO books (title, author, genre, year) VALUES (?, ?, ?, ?)", 
-                   (title, author, genre, year))
-    conn.commit()
-    print(f"✅ Book '{title}' add ho gayi!")
+def save_books():
+    with open(FILE_NAME, "w") as file:
+        json.dump(books, file, indent=4)
 
-# Function: Saari books dikhana
-def view_books():
-    cursor.execute("SELECT * FROM books")
-    books = cursor.fetchall()
+def add_book(title, author, year, genre, read):
+    book_id = len(books) + 1
+    books.append({"id": book_id, "title": title, "author": author, "year": year, "genre": genre, "read": read})
+    save_books()
+    print("📚 Book added successfully!")
+
+def list_books():
     if books:
+        print("📖 Library Books:")
         for book in books:
-            print(book)
+            status = "✔️ Read" if book["read"] else "❌ Unread"
+            print(f"{book['id']}. {book['title']} by {book['author']} ({book['year']}) - {book['genre']} - {status}")
     else:
-        print("❌ Koi book nahi mili!")
+        print("No books found in the library.")
 
-# Function: Title ya author ke basis pe search karna
-def search_book(keyword):
-    cursor.execute("SELECT * FROM books WHERE title LIKE ? OR author LIKE ?", 
-                   (f'%{keyword}%', f'%{keyword}%'))
-    books = cursor.fetchall()
-    if books:
-        for book in books:
-            print(book)
-    else:
-        print("❌ Koi matching book nahi mili!")
-
-# Function: Book ki details update karna
-def update_book(book_id, title, author, genre, year):
-    cursor.execute("UPDATE books SET title=?, author=?, genre=?, year=? WHERE id=?", 
-                   (title, author, genre, year, book_id))
-    conn.commit()
-    print("✅ Book update ho gayi!")
-
-# Function: Book delete karna
 def delete_book(book_id):
-    cursor.execute("DELETE FROM books WHERE id=?", (book_id,))
-    conn.commit()
-    print("✅ Book delete ho gayi!")
+    global books
+    books = [book for book in books if book['id'] != book_id]
+    save_books()
+    print("🗑️ Book deleted successfully!")
 
-# Function: Book borrow karna (Available se Borrowed status change hoga)
-def borrow_book(book_id):
-    cursor.execute("UPDATE books SET status='Borrowed' WHERE id=? AND status='Available'", (book_id,))
-    if cursor.rowcount:
-        conn.commit()
-        print("📖 Book borrow ho gayi!")
+def update_book(book_id, title, author, year, genre, read):
+    for book in books:
+        if book['id'] == book_id:
+            book['title'] = title
+            book['author'] = author
+            book['year'] = year
+            book['genre'] = genre
+            book['read'] = read
+            save_books()
+            print("✏️ Book updated successfully!")
+            return
+    print("Book not found!")
+
+def search_books(query):
+    found_books = [book for book in books if query.lower() in book['title'].lower() or query.lower() in book['author'].lower()]
+    if found_books:
+        for book in found_books:
+            print(f"{book['id']}. {book['title']} by {book['author']} ({book['year']})")
     else:
-        print("❌ Book pehle se borrowed hai ya nahi mili!")
+        print("No matching books found.")
 
-# Function: Book wapas karna
-def return_book(book_id):
-    cursor.execute("UPDATE books SET status='Available' WHERE id=?", (book_id,))
-    conn.commit()
-    print("📖 Book return ho gayi!")
+def show_statistics():
+    total_books = len(books)
+    unread_books = sum(1 for book in books if not book['read'])
+    genre_counts = {}
+    for book in books:
+        genre_counts[book['genre']] = genre_counts.get(book['genre'], 0) + 1
+    print(f"📊 Total Books: {total_books}, Unread Books: {unread_books}")
+    for genre, count in genre_counts.items():
+        print(f"📖 {genre}: {count}")
 
-# Menu system (CLI Interface)
-while True:
-    print("\n📚 Library Management System")
-    print("1. ➕ Add Book")
-    print("2. 📜 View Books")
-    print("3. 🔎 Search Book")
-    print("4. ✏ Update Book")
-    print("5. ❌ Delete Book")
-    print("6. 📖 Borrow Book")
-    print("7. 🔄 Return Book")
-    print("8. 🚪 Exit")
+def main():
+    load_books()
+    parser = argparse.ArgumentParser(prog="library", description="Personal Library Manager CLI Tool")
+    parser.add_argument("--add", nargs=5, metavar=("title", "author", "year", "genre", "read"), help="Add a new book")
+    parser.add_argument("--list", action="store_true", help="List all books")
+    parser.add_argument("--delete", metavar="book_id", type=int, help="Delete a book by ID")
+    parser.add_argument("--update", nargs=6, metavar=("book_id", "title", "author", "year", "genre", "read"), help="Update book details")
+    parser.add_argument("--search", metavar="query", help="Search for a book by title or author")
+    parser.add_argument("--stats", action="store_true", help="Show library statistics")
     
-    choice = input("➡ Enter your choice: ")
+    args = parser.parse_args()
     
-    if choice == '1':
-        title = input("📖 Title: ")
-        author = input("✍ Author: ")
-        genre = input("📂 Genre: ")
-        year = input("📅 Year: ")
-        add_book(title, author, genre, year)
-    elif choice == '2':
-        view_books()
-    elif choice == '3':
-        keyword = input("🔎 Enter title/author: ")
-        search_book(keyword)
-    elif choice == '4':
-        book_id = int(input("🔢 Book ID: "))
-        title = input("📖 New Title: ")
-        author = input("✍ New Author: ")
-        genre = input("📂 New Genre: ")
-        year = input("📅 New Year: ")
-        update_book(book_id, title, author, genre, year)
-    elif choice == '5':
-        book_id = int(input("🔢 Enter Book ID: "))
-        delete_book(book_id)
-    elif choice == '6':
-        book_id = int(input("🔢 Enter Book ID to borrow: "))
-        borrow_book(book_id)
-    elif choice == '7':
-        book_id = int(input("🔢 Enter Book ID to return: "))
-        return_book(book_id)
-    elif choice == '8':
-        print("🚪 System exit ho raha hai...")
-        break
+    if args.add:
+        add_book(args.add[0], args.add[1], int(args.add[2]), args.add[3], args.add[4].lower() == "true")
+    elif args.list:
+        list_books()
+    elif args.delete:
+        delete_book(args.delete)
+    elif args.update:
+        update_book(int(args.update[0]), args.update[1], args.update[2], int(args.update[3]), args.update[4], args.update[5].lower() == "true")
+    elif args.search:
+        search_books(args.search)
+    elif args.stats:
+        show_statistics()
     else:
-        print("❌ Invalid choice, try again!")
+        parser.print_help()
 
-# Database connection close karna
-conn.close()
+if __name__ == "__main__":
+    main()
